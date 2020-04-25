@@ -22,6 +22,7 @@ package com.codimiracle.web.request.identifier.aspect;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 import com.codimiracle.web.request.identifier.annotation.NonRepeatable;
 import com.codimiracle.web.request.identifier.exception.RepeatSubmissionException;
 import com.codimiracle.web.request.identifier.handler.ResultHandler;
@@ -39,6 +40,12 @@ import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
+/**
+ * checking request repeat logic.
+ * note: request argument must implemented Object#toString() represent that obj state.
+ *
+ * @author Codimiracle
+ */
 @Slf4j
 @Aspect
 @Component
@@ -54,40 +61,54 @@ public class NonRepeatableRequestGuarder {
     public void nonRepeatable(NonRepeatable nonRepeatable) {
     }
 
-    @Around(value = "nonRepeatable(nonRepeatable)")
-    public Object checking(ProceedingJoinPoint joinPoint, NonRepeatable nonRepeatable) throws Throwable {
-        if (Objects.isNull(this.nonRepeatableProvider)) {
-            log.warn("NonRepeatableProvider bean is not found, skip repeat check.");
-            return joinPoint.proceed();
-        }
+    private String generateRequestId(ProceedingJoinPoint joinPoint) {
         StringBuilder builder = new StringBuilder();
         builder.append(joinPoint.getSignature());
         Object[] args = joinPoint.getArgs();
         for (Object arg : args) {
             builder.append(arg);
         }
-        String requestId = DigestUtils.sha1Hex(builder.toString());
+        return DigestUtils.sha1Hex(builder.toString());
+    }
+
+    private boolean isRepeat(String requestId, NonRepeatable nonRepeatable) {
+        if (nonRepeatable.interval() == NonRepeatable.DEFAULT_INTERVAL) {
+            return nonRepeatableProvider.isRepeat(requestId, 1000);
+        } else if (nonRepeatable.interval() > NonRepeatable.DEFAULT_INTERVAL) {
+            return nonRepeatableProvider.isRepeat(requestId, nonRepeatable.interval());
+        } else {
+            return nonRepeatableProvider.isRepeat(requestId);
+        }
+    }
+
+    private Object checkingSuccess(String requestId, ProceedingJoinPoint joinPoint) throws Throwable {
+        if (Objects.nonNull(resultHandler)) {
+            return resultHandler.onCheckedSuccess(requestId, joinPoint);
+        } else {
+            return joinPoint.proceed();
+        }
+    }
+
+    private Object checkingFailure(String requestId) throws Throwable {
+        if (Objects.nonNull(resultHandler)) {
+            return resultHandler.onCheckedFailure(requestId);
+        } else {
+            throw new RepeatSubmissionException("your request id is duplicated");
+        }
+    }
+
+    @Around(value = "nonRepeatable(nonRepeatable)")
+    public Object checking(ProceedingJoinPoint joinPoint, NonRepeatable nonRepeatable) throws Throwable {
+        if (Objects.isNull(this.nonRepeatableProvider)) {
+            log.warn("NonRepeatableProvider bean is not found, skip repeat check.");
+            return joinPoint.proceed();
+        }
+        String requestId = generateRequestId(joinPoint);
         synchronized (lock.intern(requestId)) {
-            boolean result;
-            if (nonRepeatable.interval() == NonRepeatable.DEFAULT_INTERVAL) {
-                result = nonRepeatableProvider.isRepeat(requestId, 1000);
-            } else if (nonRepeatable.interval() > NonRepeatable.DEFAULT_INTERVAL) {
-                result = nonRepeatableProvider.isRepeat(requestId, nonRepeatable.interval());
+            if (!isRepeat(requestId, nonRepeatable)) {
+                return checkingSuccess(requestId, joinPoint);
             } else {
-                result = nonRepeatableProvider.isRepeat(requestId);
-            }
-            if (!result) {
-                if (Objects.nonNull(resultHandler)) {
-                    return resultHandler.onCheckedSuccess(requestId, joinPoint);
-                } else {
-                    return joinPoint.proceed();
-                }
-            } else {
-                if (Objects.nonNull(resultHandler)) {
-                    return resultHandler.onCheckedFailure(requestId);
-                } else {
-                    throw new RepeatSubmissionException("your request id is duplicated");
-                }
+                return checkingFailure(requestId);
             }
         }
     }
