@@ -24,6 +24,7 @@ package com.codimiracle.web.request.identifier.aspect;
  */
 
 import com.codimiracle.web.request.identifier.annotation.NonRepeatable;
+import com.codimiracle.web.request.identifier.enumeration.IdentifierStrategy;
 import com.codimiracle.web.request.identifier.exception.RepeatSubmissionException;
 import com.codimiracle.web.request.identifier.handler.ResultHandler;
 import com.codimiracle.web.request.identifier.provider.NonRepeatableProvider;
@@ -37,7 +38,11 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
 /**
@@ -61,7 +66,7 @@ public class NonRepeatableRequestGuarder {
     public void nonRepeatable(NonRepeatable nonRepeatable) {
     }
 
-    private String generateRequestId(ProceedingJoinPoint joinPoint) {
+    private String generateRequestIdByArgs(ProceedingJoinPoint joinPoint) {
         StringBuilder builder = new StringBuilder();
         builder.append(joinPoint.getSignature());
         Object[] args = joinPoint.getArgs();
@@ -69,6 +74,11 @@ public class NonRepeatableRequestGuarder {
             builder.append(arg);
         }
         return DigestUtils.sha1Hex(builder.toString());
+    }
+
+    private String retrieveByParameterName(NonRepeatable nonRepeatable) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        return request.getParameter(nonRepeatable.parameterName());
     }
 
     private boolean isRepeat(String requestId, NonRepeatable nonRepeatable) {
@@ -103,7 +113,17 @@ public class NonRepeatableRequestGuarder {
             log.warn("NonRepeatableProvider bean is not found, skip repeat check.");
             return joinPoint.proceed();
         }
-        String requestId = generateRequestId(joinPoint);
+        String requestId = null;
+        if (nonRepeatable.strategy() == IdentifierStrategy.ARGUMENTS) {
+            requestId = generateRequestIdByArgs(joinPoint);
+        }
+        if (nonRepeatable.strategy() == IdentifierStrategy.REQUEST_PARAMETER){
+            requestId = retrieveByParameterName(nonRepeatable);
+        }
+        if (Objects.isNull(requestId)) {
+            log.warn("no request id generated, skip repeat check.");
+            return joinPoint.proceed();
+        }
         synchronized (lock.intern(requestId)) {
             if (!isRepeat(requestId, nonRepeatable)) {
                 return checkingSuccess(requestId, joinPoint);

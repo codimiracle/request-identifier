@@ -23,10 +23,14 @@ package com.codimiracle.web.request.identifier.annotation;
  * SOFTWARE.
  */
 
+import com.codimiracle.web.request.identifier.enumeration.IdentifierStrategy;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import static com.codimiracle.web.request.identifier.enumeration.IdentifierStrategy.ARGUMENTS;
 
 /**
  * Mark which request method should be check.
@@ -49,4 +53,8 @@ public @interface NonRepeatable {
      * @return interval millisecond
      */
     long interval() default NO_INTERVAL;
+
+    IdentifierStrategy strategy() default ARGUMENTS;
+
+    String parameterName() default "";
 }
