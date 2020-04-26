@@ -3,6 +3,8 @@ prevents form or request multi-submits.
 
 ## Installation
 includes dependency in `pom.xml`
+notes: don't publish maven central yet, you can install by `mvn install`
+and then using following pom dependency.
 ```xml
 <dependency>
     <groupId>com.codimiracle.web</groupId>
