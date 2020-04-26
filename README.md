@@ -3,6 +3,7 @@ prevents form or request multi-submits.
 
 ## Installation
 includes dependency in `pom.xml`
+
 notes: don't publish maven central yet, you can install by `mvn install`
 and then using following pom dependency.
 ```xml
@@ -43,6 +44,7 @@ using `@NonRepeatable` annotate in controller layer:
     }
     ```
 4. using specified request parameter
+
     parameter value will retrieve from HttpServletRequest#getParameterValues();
     ```java
     @GetMapping("/hello")

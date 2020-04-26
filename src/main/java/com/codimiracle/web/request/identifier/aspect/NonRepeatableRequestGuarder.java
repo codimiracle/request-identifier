@@ -45,7 +45,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Enumeration;
 import java.util.Objects;
 
 /**
@@ -79,6 +78,7 @@ public class NonRepeatableRequestGuarder {
         }
         return null;
     }
+
     private String generateRequestIdByArgs(ProceedingJoinPoint joinPoint) {
         return digestToRequestId(joinPoint.getArgs());
     }
