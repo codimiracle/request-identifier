@@ -28,7 +28,24 @@ import org.aspectj.lang.ProceedingJoinPoint;
  * Post handler for checking result.
  */
 public interface ResultHandler {
-    Object onCheckedSuccess(String requestId, ProceedingJoinPoint joinPoint) throws Throwable;
+    /**
+     * the request is not repeat
+     *
+     * @param requestId request unique id
+     * @param joinPoint aop join point
+     * @return any proceed value from join point.
+     * @throws Throwable any exception will resolve by spring
+     */
+    default Object onCheckedSuccess(String requestId, ProceedingJoinPoint joinPoint) throws Throwable {
+        return joinPoint.proceed();
+    }
 
+    /**
+     * the request is duplicated
+     *
+     * @param requestId request unique id
+     * @return
+     * @throws Throwable
+     */
     Object onCheckedFailure(String requestId) throws Throwable;
 }
