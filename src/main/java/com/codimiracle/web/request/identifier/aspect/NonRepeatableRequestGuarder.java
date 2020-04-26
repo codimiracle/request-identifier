@@ -40,7 +40,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
@@ -117,7 +116,7 @@ public class NonRepeatableRequestGuarder {
         if (nonRepeatable.strategy() == IdentifierStrategy.ARGUMENTS) {
             requestId = generateRequestIdByArgs(joinPoint);
         }
-        if (nonRepeatable.strategy() == IdentifierStrategy.REQUEST_PARAMETER){
+        if (nonRepeatable.strategy() == IdentifierStrategy.REQUEST_PARAMETER) {
             requestId = retrieveByParameterName(nonRepeatable);
         }
         if (Objects.isNull(requestId)) {
