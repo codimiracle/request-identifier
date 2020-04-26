@@ -49,7 +49,6 @@ import java.util.Objects;
 
 /**
  * checking request repeat logic.
- * note: request argument must implemented Object#toString() represent that obj state.
  *
  * @author Codimiracle
  */
@@ -68,11 +67,11 @@ public class NonRepeatableRequestGuarder {
     public void nonRepeatable(NonRepeatable nonRepeatable) {
     }
 
-    private String digestToRequestId(Object object) {
+    private String digestToRequestId(String signature, Object object) {
         ObjectMapper mapper = new ObjectMapper();
         try {
             String content = mapper.writeValueAsString(object);
-            return DigestUtils.sha1Hex(content);
+            return DigestUtils.sha1Hex(signature + content);
         } catch (JsonProcessingException e) {
             // enclosed.
         }
@@ -80,16 +79,16 @@ public class NonRepeatableRequestGuarder {
     }
 
     private String generateRequestIdByArgs(ProceedingJoinPoint joinPoint) {
-        return digestToRequestId(joinPoint.getArgs());
+        return digestToRequestId(joinPoint.getSignature().toString(), joinPoint.getArgs());
     }
 
-    private String retrieveByParameterName(NonRepeatable nonRepeatable) {
+    private String retrieveRequestIdByParameterName(ProceedingJoinPoint joinPoint, String parameterName) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        if (StringUtils.isEmpty(nonRepeatable.parameterName())) {
+        if (StringUtils.isEmpty(parameterName)) {
             // try best effort
-            return digestToRequestId(request.getParameterMap());
+            return digestToRequestId(joinPoint.getSignature().toString(), request.getParameterMap());
         }
-        return request.getParameter(nonRepeatable.parameterName());
+        return request.getParameter(parameterName);
     }
 
     private boolean isRepeat(String requestId, NonRepeatable nonRepeatable) {
@@ -129,7 +128,7 @@ public class NonRepeatableRequestGuarder {
             requestId = generateRequestIdByArgs(joinPoint);
         }
         if (nonRepeatable.strategy() == IdentifierStrategy.REQUEST_PARAMETER) {
-            requestId = retrieveByParameterName(nonRepeatable);
+            requestId = retrieveRequestIdByParameterName(joinPoint, nonRepeatable.parameterName());
         }
         if (Objects.isNull(requestId)) {
             log.warn("no request id generated, skip repeat check.");
