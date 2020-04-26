@@ -13,7 +13,6 @@ public class Controller {
         return "Your submission is accepted.";
     }
 
-
     @NonRepeatable(interval = NonRepeatable.DEFAULT_INTERVAL)
     public String interval(String user, boolean like) {
         return "OK";
@@ -34,6 +33,13 @@ public class Controller {
     public String byParameter(CustomArg arg) {
         return "Accepted";
     }
+
+    @GetMapping("/hi")
+    @NonRepeatable(strategy = IdentifierStrategy.REQUEST_PARAMETER)
+    public String byParameterAll(CustomArg arg) {
+        return "Accepted";
+    }
+
 
     @Data
     public static class CustomArg {

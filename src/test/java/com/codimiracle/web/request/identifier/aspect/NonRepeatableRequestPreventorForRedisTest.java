@@ -13,10 +13,12 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.util.NestedServletException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(classes = TestApplicationWithoutResultHandler.class)
 class NonRepeatableRequestPreventorForRedisTest {
@@ -91,5 +93,24 @@ class NonRepeatableRequestPreventorForRedisTest {
         redisTemplate.opsForHyperLogLog().delete(NonRepeatableRedisProviderImpl.NON_REPEATABLE_KEY_ONCE);
         mvc.perform(get("/hello").queryParam("request_id", "abcd"))
                 .andExpect(content().string("Accepted"));
+        assertThrows(NestedServletException.class, () -> {
+            mvc.perform(get("/hello")
+                    .queryParam("request_id", "abcd"))
+                    .andExpect(status().is5xxServerError())
+                    .andReturn();
+        });
+    }
+
+    @Test
+    void testRequestMultiParameter() throws Exception {
+        redisTemplate.opsForHyperLogLog().delete(NonRepeatableRedisProviderImpl.NON_REPEATABLE_KEY_ONCE);
+        mvc.perform(get("/hello").queryParam("request_id", "abcd").queryParam("another", "hello world"))
+                .andExpect(content().string("Accepted"));
+        assertThrows(NestedServletException.class, () -> {
+            mvc.perform(get("/hello")
+                    .queryParam("request_id", "abcd")
+                    .queryParam("another", "hello world"))
+                    .andExpect(status().is5xxServerError());
+        });
     }
 }
