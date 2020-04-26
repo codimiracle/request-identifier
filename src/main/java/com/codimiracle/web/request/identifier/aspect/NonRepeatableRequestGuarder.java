@@ -28,6 +28,8 @@ import com.codimiracle.web.request.identifier.enumeration.IdentifierStrategy;
 import com.codimiracle.web.request.identifier.exception.RepeatSubmissionException;
 import com.codimiracle.web.request.identifier.handler.ResultHandler;
 import com.codimiracle.web.request.identifier.provider.NonRepeatableProvider;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import lombok.extern.slf4j.Slf4j;
@@ -38,10 +40,12 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Enumeration;
 import java.util.Objects;
 
 /**
@@ -65,18 +69,26 @@ public class NonRepeatableRequestGuarder {
     public void nonRepeatable(NonRepeatable nonRepeatable) {
     }
 
-    private String generateRequestIdByArgs(ProceedingJoinPoint joinPoint) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(joinPoint.getSignature());
-        Object[] args = joinPoint.getArgs();
-        for (Object arg : args) {
-            builder.append(arg);
+    private String digestToRequestId(Object object) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String content = mapper.writeValueAsString(object);
+            return DigestUtils.sha1Hex(content);
+        } catch (JsonProcessingException e) {
+            // enclosed.
         }
-        return DigestUtils.sha1Hex(builder.toString());
+        return null;
+    }
+    private String generateRequestIdByArgs(ProceedingJoinPoint joinPoint) {
+        return digestToRequestId(joinPoint.getArgs());
     }
 
     private String retrieveByParameterName(NonRepeatable nonRepeatable) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+        if (StringUtils.isEmpty(nonRepeatable.parameterName())) {
+            // try best effort
+            return digestToRequestId(request.getParameterMap());
+        }
         return request.getParameter(nonRepeatable.parameterName());
     }
 
