@@ -25,7 +25,6 @@ package com.codimiracle.web.request.identifier.aspect;
 
 import com.codimiracle.web.request.identifier.annotation.NonRepeatable;
 import com.codimiracle.web.request.identifier.enumeration.IdentifierStrategy;
-import com.codimiracle.web.request.identifier.exception.RepeatSubmissionException;
 import com.codimiracle.web.request.identifier.handler.ResultHandler;
 import com.codimiracle.web.request.identifier.provider.NonRepeatableProvider;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -102,19 +101,11 @@ public class NonRepeatableRequestGuarder {
     }
 
     private Object checkingSuccess(String requestId, ProceedingJoinPoint joinPoint) throws Throwable {
-        if (Objects.nonNull(resultHandler)) {
-            return resultHandler.onCheckedSuccess(requestId, joinPoint);
-        } else {
-            return joinPoint.proceed();
-        }
+        return resultHandler.onCheckedSuccess(requestId, joinPoint);
     }
 
     private Object checkingFailure(String requestId) throws Throwable {
-        if (Objects.nonNull(resultHandler)) {
-            return resultHandler.onCheckedFailure(requestId);
-        } else {
-            throw new RepeatSubmissionException("your request id is duplicated");
-        }
+        return resultHandler.onCheckedFailure(requestId);
     }
 
     @Around(value = "nonRepeatable(nonRepeatable)")
