@@ -33,8 +33,6 @@ import java.util.Objects;
  * Using guava implements request unique checking.
  * note: this is not long term checking.
  */
-@Component
-@ConditionalOnMissingBean(NonRepeatableRedisProviderImpl.class)
 public class NonRepeatableJavaProviderImpl implements NonRepeatableProvider {
     private Cache<String, String> cache = CacheBuilder.newBuilder().build();
     private Cache<String, Long> cacheInterval = CacheBuilder.newBuilder().build();

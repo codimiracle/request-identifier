@@ -23,6 +23,7 @@ package com.codimiracle.web.request.identifier.provider;
  * SOFTWARE.
  */
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -33,8 +34,6 @@ import java.util.Objects;
 /**
  * Using redis implements request unique checking
  */
-@Component
-@ConditionalOnClass(name = "org.springframework.data.redis.core.StringRedisTemplate")
 public class NonRepeatableRedisProviderImpl implements NonRepeatableProvider {
     public static final String NON_REPEATABLE_KEY_ONCE = "nr:hll:consumed-request-ids";
     public static final String NON_REPEATABLE_KEY = "nr:consumed:request-id:%s";
