@@ -25,8 +25,10 @@ package com.codimiracle.web.request.identifier.aspect;
 
 import com.codimiracle.web.request.identifier.annotation.NonRepeatable;
 import com.codimiracle.web.request.identifier.enumeration.IdentifierStrategy;
+import com.codimiracle.web.request.identifier.exception.InvalidRequestIdException;
 import com.codimiracle.web.request.identifier.handler.ResultHandler;
 import com.codimiracle.web.request.identifier.provider.NonRepeatableProvider;
+import com.codimiracle.web.request.identifier.provider.RequestIdProvider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Interner;
@@ -53,41 +55,18 @@ import java.util.Objects;
  */
 @Slf4j
 @Aspect
-@Component
 public class NonRepeatableRequestGuarder {
     Interner<String> lock = Interners.newWeakInterner();
     @Autowired(required = false)
     private NonRepeatableProvider nonRepeatableProvider;
+    @Autowired
+    private RequestIdProvider requestIdProvider;
 
     @Autowired(required = false)
     private ResultHandler resultHandler;
 
     @Pointcut(value = "@annotation(nonRepeatable)", argNames = "nonRepeatable")
     public void nonRepeatable(NonRepeatable nonRepeatable) {
-    }
-
-    private String digestToRequestId(String signature, Object object) {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            String content = mapper.writeValueAsString(object);
-            return DigestUtils.sha1Hex(signature + content);
-        } catch (JsonProcessingException e) {
-            // enclosed.
-        }
-        return null;
-    }
-
-    private String generateRequestIdByArgs(ProceedingJoinPoint joinPoint) {
-        return digestToRequestId(joinPoint.getSignature().toString(), joinPoint.getArgs());
-    }
-
-    private String retrieveRequestIdByParameterName(ProceedingJoinPoint joinPoint, String parameterName) {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        if (StringUtils.isEmpty(parameterName)) {
-            // try best effort
-            return digestToRequestId(joinPoint.getSignature().toString(), request.getParameterMap());
-        }
-        return request.getParameter(parameterName);
     }
 
     private boolean isRepeat(String requestId, NonRepeatable nonRepeatable) {
@@ -114,16 +93,13 @@ public class NonRepeatableRequestGuarder {
             log.warn("NonRepeatableProvider bean is not found, skip repeat check.");
             return joinPoint.proceed();
         }
-        String requestId = null;
-        if (nonRepeatable.strategy() == IdentifierStrategy.ARGUMENTS) {
-            requestId = generateRequestIdByArgs(joinPoint);
-        }
-        if (nonRepeatable.strategy() == IdentifierStrategy.REQUEST_PARAMETER) {
-            requestId = retrieveRequestIdByParameterName(joinPoint, nonRepeatable.parameterName());
-        }
+        String requestId = requestIdProvider.toRequestId(nonRepeatable, joinPoint);
         if (Objects.isNull(requestId)) {
             log.warn("no request id generated, skip repeat check.");
             return joinPoint.proceed();
+        }
+        if (!requestIdProvider.isValidated(nonRepeatable, joinPoint, requestId)) {
+            throw new InvalidRequestIdException("validation failed, calling with [" + requestId + "]");
         }
         synchronized (lock.intern(requestId)) {
             if (!isRepeat(requestId, nonRepeatable)) {

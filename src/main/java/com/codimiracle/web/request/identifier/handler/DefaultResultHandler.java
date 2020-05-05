@@ -5,6 +5,6 @@ import com.codimiracle.web.request.identifier.exception.RepeatSubmissionExceptio
 public class DefaultResultHandler implements ResultHandler {
     @Override
     public Object onCheckedFailure(String requestId) throws Throwable {
-        throw new RepeatSubmissionException("your request id is duplicated.");
+        throw new RepeatSubmissionException("your request id is duplicated, given request id [" + requestId + "]");
     }
 }
