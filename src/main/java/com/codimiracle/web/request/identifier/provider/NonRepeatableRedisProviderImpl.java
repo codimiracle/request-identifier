@@ -30,7 +30,11 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Using redis implements request unique checking
+ * an implementation of {@link NonRepeatableProvider} using redis
+ *
+ * @author codimiracle
+ * @since 0.0.1
+ * @see NonRepeatableProvider
  */
 public class NonRepeatableRedisProviderImpl implements NonRepeatableProvider {
     public static final String NON_REPEATABLE_KEY_ONCE = "nr:hll:consumed-request-ids";

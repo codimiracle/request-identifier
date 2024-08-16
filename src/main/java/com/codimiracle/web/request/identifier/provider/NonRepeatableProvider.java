@@ -22,6 +22,11 @@ package com.codimiracle.web.request.identifier.provider;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+/**
+ * request repeating checker
+ *
+ */
 public interface NonRepeatableProvider {
     boolean isRepeat(String requestId);
 

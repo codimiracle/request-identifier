@@ -24,39 +24,27 @@ package com.codimiracle.web.request.identifier.aspect;
  */
 
 import com.codimiracle.web.request.identifier.annotation.NonRepeatable;
-import com.codimiracle.web.request.identifier.enumeration.IdentifierStrategy;
 import com.codimiracle.web.request.identifier.exception.InvalidRequestIdException;
 import com.codimiracle.web.request.identifier.handler.ResultHandler;
 import com.codimiracle.web.request.identifier.provider.NonRepeatableProvider;
 import com.codimiracle.web.request.identifier.provider.RequestIdProvider;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Interner;
-import com.google.common.collect.Interners;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
 /**
- * checking request repeat logic.
+ * checking request repeatable guardian
  *
  * @author Codimiracle
  */
 @Slf4j
 @Aspect
 public class NonRepeatableRequestGuarder {
-    Interner<String> lock = Interners.newWeakInterner();
     @Autowired(required = false)
     private NonRepeatableProvider nonRepeatableProvider;
     @Autowired
@@ -101,12 +89,10 @@ public class NonRepeatableRequestGuarder {
         if (!requestIdProvider.isValidated(nonRepeatable, joinPoint, requestId)) {
             throw new InvalidRequestIdException("validation failed, calling with [" + requestId + "]");
         }
-        synchronized (lock.intern(requestId)) {
-            if (!isRepeat(requestId, nonRepeatable)) {
-                return checkingSuccess(requestId, joinPoint);
-            } else {
-                return checkingFailure(requestId);
-            }
+        if (!isRepeat(requestId, nonRepeatable)) {
+            return checkingSuccess(requestId, joinPoint);
+        } else {
+            return checkingFailure(requestId);
         }
     }
 }

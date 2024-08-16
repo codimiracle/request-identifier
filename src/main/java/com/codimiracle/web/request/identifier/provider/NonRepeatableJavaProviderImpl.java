@@ -22,24 +22,26 @@ package com.codimiracle.web.request.identifier.provider;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-
-import java.util.Objects;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Using guava implements request unique checking.
- * note: this is not long term checking.
+ * an implementation of {@link NonRepeatableProvider} by java code
+ * it is not recommended to use this implementation in production environment.
+ * it will boom! of OOM
+ *
+ * @author codimiracle
+ * @since 0.0.1
+ * @see NonRepeatableProvider
  */
 public class NonRepeatableJavaProviderImpl implements NonRepeatableProvider {
-    private Cache<String, String> cache = CacheBuilder.newBuilder().build();
-    private Cache<String, Long> cacheInterval = CacheBuilder.newBuilder().build();
+    private Map<String, String> cache = new ConcurrentHashMap<>();
+    private Map<String, Long> cacheInterval = new ConcurrentHashMap<>();
 
     @Override
     public boolean isRepeat(String requestId) {
-        String exists = cache.getIfPresent(requestId);
-        if (Objects.isNull(exists)) {
+        String exists = cache.get(requestId);
+        if (exists == null) {
             cache.put(requestId, requestId);
             return false;
         }
@@ -48,8 +50,8 @@ public class NonRepeatableJavaProviderImpl implements NonRepeatableProvider {
 
     @Override
     public boolean isRepeat(String requestId, long interval) {
-        Long expires = cacheInterval.getIfPresent(requestId);
-        if (Objects.isNull(expires)) {
+        Long expires = cacheInterval.get(requestId);
+        if (expires == null) {
             cacheInterval.put(requestId, System.currentTimeMillis() + interval);
             return false;
         }

@@ -22,6 +22,13 @@ package com.codimiracle.web.request.identifier.exception;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+/**
+ * Repeat submission exception
+ *
+ * @author codimiracle
+ * @since 0.0.1
+ */
 public class RepeatSubmissionException extends RuntimeException {
     public RepeatSubmissionException(String message) {
         super(message);

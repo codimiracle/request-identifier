@@ -26,6 +26,9 @@ import org.aspectj.lang.ProceedingJoinPoint;
 
 /**
  * Post handler for checking result.
+ *
+ * @author codimiracle
+ * @since 0.0.1
  */
 public interface ResultHandler {
     /**

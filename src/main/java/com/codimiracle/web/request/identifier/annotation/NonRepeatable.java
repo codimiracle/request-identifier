@@ -33,7 +33,10 @@ import java.lang.annotation.Target;
 import static com.codimiracle.web.request.identifier.enumeration.IdentifierStrategy.ARGUMENTS;
 
 /**
- * Mark which request method should be check.
+ * Marking which request method should be checked.
+ *
+ * @author codimiracle
+ * @since 0.0.1
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
@@ -43,12 +46,12 @@ public @interface NonRepeatable {
      */
     long NO_INTERVAL = -1;
     /**
-     * just one seconds
+     * just one second
      */
     long DEFAULT_INTERVAL = 0;
 
     /**
-     * how long will can be repeated.
+     * how long the request will be repeatable again.
      *
      * @return interval millisecond
      */

@@ -15,8 +15,8 @@ and then using following pom dependency.
 ```
 ## Feature
 * Request infrequent repeat
-* Request only once
-* Checking result custom logic (implements [`ResultHandler`](src/main/java/com/codimiracle/web/request/identifier/handler))
+* Request only once (based on redis)
+* Checking result and running custom logic (implements [`ResultHandler`](src/main/java/com/codimiracle/web/request/identifier/handler))
 ## Usage
 using `@NonRepeatable` annotate in controller layer:
 

@@ -13,7 +13,14 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 
 /**
+ * Default request id provider implementation.
  *
+ * it is simply digest the request arguments or request parameters to generate a unique request id.
+ *
+ * @author codimiracle
+ * @since 0.0.1
+ *
+ * @see RequestIdProvider
  */
 public class DefaultRequestIdProviderImpl implements RequestIdProvider {
     private String digestToRequestId(String signature, Object requestArg) {
